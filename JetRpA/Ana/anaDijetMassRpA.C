@@ -28,9 +28,11 @@ const double leadingjetcut = 120. ;
 const double subleadjetcut = 30. ;
 TString  algo="ak3PF";
 double conesize ; //= 0.3; //make sure the tracks around jet cone inside eta range
+const int QCDpthatBins = 8;
+//const int QCDpthatBins = 9;
 
 int pthat ;//= 80 ; //= 120 ; //=300 ; //30 and 80 for pp; 30,50,80,120,170,200 for PbPb MC 
-int ptmax ; //= 9999 ; //= 170 ;
+//int ptmax ; //= 9999 ; //= 170 ;
 TString coll = "PPb";
 TString TrigName ; //= "MB" ; //"Jet40" ; "Jet60" ; "Jet80"; "Jet100" ;"MB";
 TString para ="Full" ; //PYQUEN parameters setting: Wide or Full
@@ -45,7 +47,13 @@ vector<TrackingCorrections*> trackCorrections;
 
 //weight factor from vertex and centrality
 double weight =1. ;
-
+//for cross section weight 
+const int pthatbin[] = {15,30,50,80,120,170,220,280,9999}; // 370, 9999};
+const double wght[] = {5.335E-01, 3.378E-02, 3.778E-03, 4.412E-04, 6.147E-05,1.018E-05,2.477E-06,6.160E-07, 0}; //1.088E-07, 0};
+const int NevtPthat[] = {184697, 187992, 182080, 192166,163634, 176308, 178740, 252933} ;
+//const int pthatbin[] = {15,30,50,80,120,170,220,280,370, 9999};
+//const double wght[] = {5.335E-01, 3.378E-02, 3.778E-03, 4.412E-04, 6.147E-05,1.018E-05,2.477E-06,6.160E-07, 1.088E-07, 0};
+//const int NevtPthat[] = {310970, 258408, 314691, 300873, 218503, 239278, 295881, 250932, 189764} ;
 TString intputFile ;
 
 //TString dataPath="/Users/ymao/group/CMS/hiForest";
@@ -420,8 +428,8 @@ void hist_class::Write()
     if(DoGenAna) anagen="GenCharge";
     else anagen="";
    if(doTrackCorrections){
-      if(IsMC)  out_name=Form("%s%s_%sDiJetMassJetPt%.f%sTrkEff%sCut%.fEtaBin%d_HFsumEta4Bin%d_%s",dataType.Data(),coll.Data(),algo.Data(), subleadjetcut,  anagen.Data(), corrMet.Data(), trackcut,netabin, nbin, intputFile.Data());
-      else   out_name=Form("%s%s_%s%sDiJetMassJetPt%.f%sTrkEff%sCut%.fEtaBin%d_HFsumEta4Bin%d_%s",dataType.Data(),coll.Data(),TrigName.Data(),algo.Data(),  subleadjetcut, anagen.Data(), corrMet.Data(), trackcut,netabin, nbin, intputFile.Data());
+      if(IsMC)  out_name=Form("%s%sNoGplus_%sDiJetMassJetNoResidualPt%.f%sTrkEff%sCut%.fEtaBin%d_HFsumEta4Bin%d_%s",dataType.Data(),coll.Data(),algo.Data(), subleadjetcut,  anagen.Data(), corrMet.Data(), trackcut,netabin, nbin, intputFile.Data());
+      else   out_name=Form("%s%sNoGplus_%s%sDiJetMassJetNoResidualPt%.f%sTrkEff%sCut%.fEtaBin%d_HFsumEta4Bin%d_%s",dataType.Data(),coll.Data(),TrigName.Data(),algo.Data(),  subleadjetcut, anagen.Data(), corrMet.Data(), trackcut,netabin, nbin, intputFile.Data());
       }
     else {
         if(IsMC)  out_name=Form("%s%s_%sDiJetMass%sJetPt%.fTrk%.fEtaBin%d_%s",dataType.Data(),coll.Data(), algo.Data(), anagen.Data(),subleadjetcut, trackcut,netabin,intputFile.Data());
@@ -557,8 +565,8 @@ void anaDijetMassRpA()
 
     if(my_hists->IsMC==kTRUE){
       pthat=atoi(getenv("PTHAT")) ;
-      ptmax=atoi(getenv("PTMAX")) ;
-       cout <<"pthat = " <<pthat <<"  pthatmax =" <<ptmax <<endl ;
+    //  ptmax=atoi(getenv("PTMAX")) ;
+       cout <<"pthat = " <<pthat <<endl ;
      }
  
     if(algo=="akPu4PF" || algo=="ak4PF" || algo=="akPu4Calo") conesize = 0.4 ;
@@ -763,6 +771,12 @@ void anaDijetMassRpA()
                 else if (coll=="PP2011")
                  jetTr2 = trigSel->HLT_Jet60_v1 ;
                else {
+                 int jetMB = trigSel->HLT_PAZeroBiasPixel_SingleTrack_v1 ;
+                 int jet20 = trigSel->HLT_PAJet20_NoJetID_v1  ;
+                 int jet40 = trigSel->HLT_PAJet40_NoJetID_v1  ;
+                 int jet60 = trigSel->HLT_PAJet60_NoJetID_v1  ;
+                 int jet80 = trigSel->HLT_PAJet80_NoJetID_v1  ;
+                 int jet100 = trigSel->HLT_PAJet100_NoJetID_v1  ;
                //  jetTr2 = trigSel->HLT_PAJet80_NoJetID_v1 ;
                 if(TrigName=="Jet20") jetTr2 = trigSel->HLT_PAJet20_NoJetID_v1  ;
                 else  if(TrigName=="Jet40") jetTr2 = trigSel->HLT_PAJet40_NoJetID_v1  ;
@@ -770,25 +784,42 @@ void anaDijetMassRpA()
                 else  if(TrigName=="Jet80") jetTr2 = trigSel->HLT_PAJet80_NoJetID_v1  ;
                 else  if(TrigName=="Jet100") jetTr2 = trigSel->HLT_PAJet100_NoJetID_v1  ;
                 else  jetTr2 = trigSel->HLT_PAZeroBiasPixel_SingleTrack_v1 ;
+                if(!jetMB && !jet20 && !jet40 && !jet60 && !jet80 && !jet100) continue;   
                }
             if(!jetTr2) continue ;
             int run=offSel->run ;
              if( !(my_skim->phfPosFilter1 && my_skim->phfNegFilter1 && my_skim->pBeamScrapingFilter && my_skim->pprimaryvertexFilter)) continue ;
             if(coll=="PPb"){
             // if( my_skim->phfPosFilter1==0 || my_skim->phfNegFilter1==0 ||my_skim->pBeamScrapingFilter==0 || my_skim->pprimaryvertexFilter==0) continue ;
-             if(!pileup_Gplus) continue ;
+           //  if(!pileup_Gplus) continue ;
              if(run>211256) continue ;
              if(run<210676) continue ;  //remove the runs with old alignment
             }
            if(coll=="PbP"){
-             if(pileup_Gplus==0) continue ;
+          //   if(pileup_Gplus==0) continue ;
             if(run<=211256) continue ;
            }
         }
 
+        my_hists->Vertex->Fill(vz);
     //      if(evi%10000==1)cout <<" coll = " <<coll <<" weight = " <<weight <<" evt = " <<evi <<endl ;
         if(TMath::Abs(vz)>15.) continue ;
-        if(my_hists->IsMC==kTRUE) weight*=fVz->Eval(vz);
+        double XsecWeight = 1. ;
+        if(my_hists->IsMC==kTRUE && my_ct->pthat<pthat) continue ;
+       //  if(my_ct->pthat>ptmax) cout <<"pthat =" <<my_ct->pthat <<endl ;
+        if(my_hists->IsMC==kTRUE) {
+        //  weight*=fVz->Eval(vz);
+         if(my_ct->pthat>=pthatbin[QCDpthatBins-1]){
+           XsecWeight =(wght[QCDpthatBins-1])/NevtPthat[QCDpthatBins-1];   
+         }
+        else {
+         for(int  ipthat = 0 ; ipthat < QCDpthatBins-1 ; ipthat++){
+           if(my_ct->pthat>=pthatbin[ipthat] && my_ct->pthat < pthatbin[ipthat+1]) XsecWeight =(wght[ipthat]-wght[ipthat+1])/NevtPthat[ipthat];
+            }
+         }
+        //  cout <<"pthat = " << my_ct->pthat << " Xsec =" << XsecWeight << endl ;
+           weight*=XsecWeight;
+       }  
      //run selection
     if(my_hists->IsMC!=kTRUE && coll=="PPb") {
        if(offSel->run<210676 ||offSel->run>211256) //211256: last pPb run (Pb goes to +eta)
@@ -810,13 +841,10 @@ void anaDijetMassRpA()
     /*    //if there is no jets or no PF candidates, skip the event
         if(my_ct->nref==0) continue ;
    */     //put the higher pthat cut
-        if(my_hists->IsMC==kTRUE && my_ct->pthat>ptmax) continue ;
-         if(my_ct->pthat>ptmax) cout <<"pthat =" <<my_ct->pthat <<endl ;
        if(coll=="HI"|| coll=="PP2011") 
         my_hists->CenBin->Fill(hiBin*2.5);
       else my_hists->CenBin->Fill(hiBin);
 
-        my_hists->Vertex->Fill(vz);
 
         //   cout <<"vz =" <<vz <<endl ;
         
@@ -868,13 +896,13 @@ void anaDijetMassRpA()
       }
      if(my_hists->IsMC==kFALSE){
       // Don't analyze 0 multiplicity events; correction added later
-      if(trackMult==0)
-         continue;
+  //    if(trackMult==0)
+ //        continue;
     //  double evtWeight = 1.;
    //   evtWeight = corr.getEventWeight(trackMult);
       weight*=corr.getEventWeight(trackMult);
    } 
-       my_hists->NEvents[curr_bin]->Fill(1, weight);
+      my_hists->NEvents[curr_bin]->Fill(1, weight);
      
      //Jets for event classification
       int jetMult = 0;
@@ -952,13 +980,13 @@ void anaDijetMassRpA()
    //   if(raw_pt/jet_pt<0.3) cout <<"JES problem !!" << " raw =" <<raw_pt << " jetpt = " <<jet_pt << " eta =" <<jet_eta <<endl ;
           my_hists->rawptJES[curr_bin]->Fill(raw_pt, jet_pt/raw_pt, weight);
           if(my_hists->IsMC==kTRUE) my_hists->refptJES[curr_bin]->Fill(ref_pt, jet_pt/ref_pt, weight);
-      if(algo=="ak3PF" || algo=="akPu3PF"){
+/*      if(algo=="ak3PF" || algo=="akPu3PF"){
        if( my_hists->IsMC!=kTRUE ) jetweight*=(fUE->Eval(jet_pt))*C_rel->GetBinContent(C_rel->FindBin(jet_eta));
        else
           jetweight*=((fUE->Eval(jet_pt))*fgaus->GetRandom()+1);
         }
       else 
-        jetweight = 1; 
+ */       jetweight = 1; 
           my_hists->jetptEta[curr_bin]->Fill(jet_pt*jetweight, jet_eta, weight);
           my_hists->wtjetptJES[curr_bin]->Fill(raw_pt, (jet_pt*jetweight)/raw_pt, weight);
           if(my_hists->IsMC==kTRUE) my_hists->refptwtJES[curr_bin]->Fill(ref_pt, (jet_pt*jetweight)/ref_pt, weight);
@@ -1163,13 +1191,13 @@ void anaDijetMassRpA()
   //  if( my_hists->IsMC==kTRUE && my_ct->subid[j4i]!= 0) continue;
      //for jet kinematcis cuts
      if(TMath::Abs(jet_eta)<=3.){
-        if(algo=="ak3PF" || algo=="akPu3PF"){
+      /*  if(algo=="ak3PF" || algo=="akPu3PF"){
            if( my_hists->IsMC!=kTRUE ) jetweight*=(fUE->Eval(jet_pt))*C_rel->GetBinContent(C_rel->FindBin(jet_eta));
            else
                jetweight*=((fUE->Eval(jet_pt))*fgaus->GetRandom()+1);
         }
        else
-          jetweight = 1; 
+    */      jetweight = 1; 
        jet_vec.SetPtEtaPhi(jet_pt, jet_eta, jet_phi);
     // for track loop in each jet, do jet-track analysis
            for(int itr = 0 ; itr < my_tr->nTrk ; itr++){
