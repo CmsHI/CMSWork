@@ -3,6 +3,7 @@
 #include <vector>
 #include <math.h>
 #include <algorithm>
+#include <set>
 #include "TH1.h"
 #include "TH2F.h"
 #include "TTree.h"
@@ -13,6 +14,28 @@
 #include "TChain.h"
 #include "TF1.h"
 #include "TMath.h"
+#include <TF1.h>
+#include <TCanvas.h>
+#include <TLegend.h>
+#include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <TH3.h>
+#include <TFile.h>
+#include <TStyle.h>
+#include <TStopwatch.h>
+#include <TRandom3.h>
+#include <TChain.h>
+#include <TProfile.h>
+#include <TStopwatch.h>
+#include <TCut.h>
+#include <cstdlib>
+#include <cmath>
+#include "TLatex.h"
+#include "TLine.h"
+#include "TMath.h"
+#include "DataFormats/HLTReco/interface/TriggerObject.h"
 
 //These includes cause some complications in CMSSW_5_3_8_HI_patchX. Commented out for pp.
 //If you want to recalculate the JECs on the fly again, just uncomment everything in the updateJEC blocks
@@ -22,14 +45,20 @@
 //#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 
 using namespace std;
+typedef std::vector<trigger::TriggerObject> trigO;
+
+TStopwatch timer;
 
 // ******* GLOBAL DECLARATIONS **********
 const int QCDpthatBins = 8;
 //const int QCDpthatBins = 9;
 //const int QCDpthatBins = 1;
-const int dataFiles = 6;
+const int dataFiles = 10292;
+int startfile ;
+int endfile ;
+int combinationMethod ;
 
-const TString algo = "ak3PF" ;
+const TString algo = "akPu3PF" ;
 const double deta[]={-2.2, -1.2, -0.7, -0.3, 0.3, 0.7,1.2,2.2} ;
 const int netabin = sizeof(deta)/sizeof(Double_t)-1 ;
 const Double_t jetPtBin[]={3, 4, 5, 7, 9, 12, 15, 18, 22, 27, 33, 39, 47, 55, 64,74, 84, 97, 114, 133, 153, 174, 196, 220, 245, 272, 300, 429, 692, 1000};
@@ -44,7 +73,7 @@ const double wght[10] = {5.335E-01, 3.378E-02, 3.778E-03, 4.412E-04, 6.147E-05,1
 // Count the MC events to appropriately weight the pthat bins
 //**********************************************************
 
-int *countMCevents(std::string infile, bool usePUsub, int isMC){
+int *countMCevents(std::string infile, int isMC){
 
   TChain *ch = NULL;
 //  if(usePUsub) 
@@ -106,12 +135,44 @@ int *countMCevents(std::string infile, bool usePUsub, int isMC){
 //**********************************************************
 
 //[0] = MB, [1] = Jet20, [2] = Jet40, [3] = Jet60, [4] = Jet80, [5] = Jet100
-double trigComb(bool *triggerDecision, double *pscl){
+double trigComb(bool *trg, double *pscl, double pt, int combinationMethod){
   double weight=1;
-  // if(triggerDecision[0] && !triggerDecision[1] && !triggerDecision[2] && !triggerDecision[3]) weight = 1./(1./pscl[0]); //Removing finnicky Jet20 sample
-  if(triggerDecision[1] && !triggerDecision[2] && !triggerDecision[3]) weight = 1./(1./pscl[1]);
-  if(triggerDecision[2] && !triggerDecision[3]) weight = 1./(1./pscl[1] + 1./pscl[2] - (1./(pscl[1]*pscl[2])));
-  if(triggerDecision[3]) weight = 1.;
+//old method used by HIN-12-003
+/*  //new method can be used for 5 triggers: [0] = Jet20, [4]= Jet100
+    if(trg[0] && !trg[1] && !trg[2] && !trg[3] && !trg[4]) weight = 1./(1./pscl[0]);
+    else if(trg[1] && !trg[2] && !trg[3] && !trg[4]) weight = 1.;
+    else if(trg[2] && !trg[3] && !trg[4]) weight = 1.;
+    else if(trg[3] && !trg[4]) weight = 1.;
+    else weight =1. ;
+  //  if(trg[4]) weight = 1.;
+
+    if(trg[0] && !trg[1] && !trg[2] ) weight = 1./(1./pscl[0]);
+    if(trg[1] && !trg[2]) weight = 1./(1./pscl[1]);
+    else weight = 1. ; ///(1./pscl[2]) ;
+
+  //HIN-12-017 (charged part RpA) combination method - solid but loses events that slip through the pt bins
+    if(trg[0] && pt>40 && pt<60) weight = pscl[0];
+    if(trg[1] && pt>60 && pt<75) weight = pscl[1];
+    if(trg[2] && pt>75 && pt<95) weight = pscl[2];
+    if(trg[3] && pt>95 && pt<120) weight = pscl[3];
+    if(trg[4] && pt>120) weight = 1.;
+*/
+ if(combinationMethod==1){ 
+   //Final CMS Methodology - jet-by-jet weighting method for CMS trigger-type setup.
+        if(trg[4] && pt>=100) weight = pscl[4];
+        if(trg[3] && pt>=80 && pt<100) weight = pscl[3];
+        if(trg[2] && pt>=60 && pt<80) weight = pscl[2];
+        if(trg[1] && pt>=40 && pt<60) weight = pscl[1];
+        if(trg[0] && pt>=20 && pt<40) weight = pscl[0];
+ }
+ else {
+ //HIN-12-017 (charged part RpA) combination method - solid but loses events that slip through the pt bins
+    if(trg[0] && pt>40 && pt<60) weight = pscl[0];
+    if(trg[1] && pt>60 && pt<75) weight = pscl[1];
+    if(trg[2] && pt>75 && pt<95) weight = pscl[2];
+    if(trg[3] && pt>95 && pt<120) weight = pscl[3];
+    if(trg[4] && pt>120) weight = 1.;
+ }   
   return weight;
 }
 
@@ -119,7 +180,7 @@ double trigComb(bool *triggerDecision, double *pscl){
 // "get" the trigger prescales by counting trigger overlap
 //**********************************************************
 
-double* getPscls(std::string infile, int nFiles, bool usePUsub){
+double* getPscls(std::string infile, int nFiles){
   
   TChain *dataCH = NULL;
 //  if(usePUsub){
@@ -165,24 +226,60 @@ double* getPscls(std::string infile, int nFiles, bool usePUsub){
   return pscls;
 }
 
+// *************************************************************
+float triggerMatch(int trgObjSize, float* trigPhi, float* trigEta, float *trigPt, float jtphi, float jteta, float jtpt){
+  float triggerPt=0;
+  float closestMatch=999999.;
+  
+  for(int iObj=0; iObj<trgObjSize; iObj++){
+    if(abs(trigPhi[iObj]-jtphi)<0.2 && abs(trigEta[iObj]-jteta)<0.2 && abs(trigPt[iObj]-jtpt)/jtpt<1. && abs(trigPt[iObj]-TMath::Floor(trigPt[iObj]))>0.0001){
+      if(sqrt(pow((trigPhi[iObj]-jtphi),2)+pow((trigEta[iObj]-jteta),2))<closestMatch){
+closestMatch = sqrt(pow((trigPhi[iObj]-jtphi),2)+pow((trigEta[iObj]-jteta),2));
+triggerPt = trigPt[iObj];
+      }
+    }
+  }
+  return triggerPt;
+}
+
+// ****************************************************************
+
+
 //**********************************************************
 // ~~~ MAIN PROGRAM ~~~
 //**********************************************************
 
-void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, int doJets=1, int doTracks=1, int updateJEC=0, int cbin=-1, bool ExpandedTree=false, bool usePUsub=0)
+void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, int doJets=1, int doTracks=1, int updateJEC=0, int cbin=-1, bool ExpandedTree=false, bool useJetTrgAssociation=1)
 {
   // isMC=0 --> Real data, ==1 --> QCD, ==2 --> bJet, ==3 --> cJet
   Float_t minJetPt=0.;
   
   Float_t maxJetEta=3.;
   Float_t minMuPt=5;
-  
+  if(useJetTrgAssociation)  combinationMethod = 1 ;
+  else combinationMethod = 2 ;
+      startfile=atoi(getenv("FIRST"));
+    endfile=atoi(getenv("LAST"));
+   cout <<"analysis  "  << "  in file " << startfile << "  and " <<endfile<<endl ;
+
+  timer.Start();  
   // cbin = -1 --> 0-100%
   // cbin = 0 --> 0-20%
   // cbin = 1 --> 20-50%
   // cbin =2 --> 50-100%
   if(!ppPbPb) cbin=-1;
   int useWeight=1;
+  double         triggerPt;
+  trigO *HLT_PAJet_NoJetID_v1_trigObject[6];
+    int trigObjSize[5];
+
+  float trigObjPt[5][1000];
+  float trigObjEta[5][1000];
+  float trigObjPhi[5][1000];
+
+  for(int i=0; i<5; i++){
+    HLT_PAJet_NoJetID_v1_trigObject[i] = new trigO;
+  } 
 
   //Get vz weight histograms for MC if needed
 //  TH1D *hMCvz[2], hDatavz;
@@ -222,10 +319,12 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   std::string infile;
   int *MCentr = NULL;
   double *pscls = NULL;
-
+ 
   //File load
     if(!isMC){
-      infile = "pPbDataForest.txt";
+  //    infile = "pPbDataForest.txt";
+  //   infile = "DataForestTrig60to80to100.txt";
+     infile = "pAFileListKurtv4.txt";
     }
     else {
     //  infile = "pPbForestList.txt";
@@ -312,13 +411,20 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   Int_t refparton_flavor[1000];
   Int_t refparton_flavorForB[1000];
   Bool_t refparton_isGSP[1000];
-  Int_t          HLT_PAZeroBiasPixel_SingleTrack_v1;
-  Int_t          HLT_PAJet20_NoJetID_v1;
-  Int_t          HLT_PAJet40_NoJetID_v1;
-  Int_t          HLT_PAJet60_NoJetID_v1;
-  Int_t          HLT_PAJet80_NoJetID_v1;
-  Int_t          HLT_PAJet100_NoJetID_v1;
+  Bool_t          HLT_PAZeroBiasPixel_SingleTrack_v1;
+  Bool_t          HLT_PAJet20_NoJetID_v1;
+  Bool_t          HLT_PAJet40_NoJetID_v1;
+  Bool_t          HLT_PAJet60_NoJetID_v1;
+  Bool_t          HLT_PAJet80_NoJetID_v1;
+  Bool_t          HLT_PAJet100_NoJetID_v1;
+  Double_t          HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl;
+  Double_t          HLT_PAJet20_NoJetID_v1_Prescl;
+  Double_t          HLT_PAJet40_NoJetID_v1_Prescl;
+  Double_t          HLT_PAJet60_NoJetID_v1_Prescl;
+  Double_t          HLT_PAJet80_NoJetID_v1_Prescl;
+  Double_t          HLT_PAJet100_NoJetID_v1_Prescl;
   Int_t pVertexFilterCutGplusUpsPP;
+  Int_t pVertexFilterCutGplus;
   Int_t pPAcollisionEventSelectionPA;
   Int_t pHBHENoiseFilter;
   Int_t pprimaryvertexFilter;
@@ -356,15 +462,15 @@ Float_t gendrjt[1000];
 
   TFile *fout=NULL;
 
-   if ( isRecopp ) { // pp reco, jet triggered
+   if ( isRecopp && useJetTrgAssociation ) { // pp reco, jet triggered
       if(isMC) fout=new TFile(Form("histos/ppMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt%.fnoIPupperCut.root",algo.Data(), minJetPt),"recreate");
-      else fout=new TFile(Form("histos/ppdata_ppReco_%s_jetTrig_noIPupperCut.root", algo.Data()),"recreate");
+      else fout=new TFile(Form("histos/pPbdata_ppReco_%s_AlljetTrigKurtTrCombFile%d_%d_JetPt%.fnoIPupperCut.root", algo.Data(),startfile,endfile, minJetPt),"recreate");
     }
-    else if( isRecopp && !usePUsub){
-      if(isMC) fout=new TFile("histos/ppMC_ppReco_ak3PF_gsp2_QCDjetTrig_noIPupperCut.root","recreate");
-      else fout=new TFile("histos/ppdata_ppReco_ak3PF_gsp2_jetTrig_noIPupperCut.root","recreate");
+   else if ( isRecopp && !useJetTrgAssociation ) { // pp reco, jet triggered
+      if(isMC) fout=new TFile(Form("histos/ppMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt%.fnoIPupperCut.root",algo.Data(), minJetPt),"recreate");
+      else fout=new TFile(Form("histos/pPbdata_ppReco_%s_AlljetTrigEricTrCombFile%d_%d_JetPt%.fnoIPupperCut.root", algo.Data(),startfile,endfile, minJetPt),"recreate");
     }
-    else if (!isRecopp) { // hi reco, jet triggered
+    else { // hi reco, jet triggered
       if(isMC)fout=new TFile("histos/ppMC_hiReco_jetTrig_addGSP_up.root","recreate");
       else fout=new TFile("histos/ppdata_hiReco_jetTrig_regPFforJets.root","recreate");
     }
@@ -703,7 +809,14 @@ Float_t gendrjt[1000];
     nt->Branch("HLT_PAJet60_noJetID_v1",&HLT_PAJet60_NoJetID_v1,"HLT_PAJet60_noJetID_v1/I");
     nt->Branch("HLT_PAJet80_noJetID_v1",&HLT_PAJet80_NoJetID_v1,"HLT_PAJet80_noJetID_v1/I");
     nt->Branch("HLT_PAJet100_noJetID_v1",&HLT_PAJet100_NoJetID_v1,"HLT_PAJet100_noJetID_v1/I");
+    nt->Branch("HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl ",&HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl,"HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl/I");
+    nt->Branch("HLT_PAJet20_noJetID_v1_Prescl",&HLT_PAJet20_NoJetID_v1_Prescl,"HLT_PAJet20_noJetID_v1_Prescl/I");
+    nt->Branch("HLT_PAJet40_noJetID_v1_Prescl",&HLT_PAJet40_NoJetID_v1_Prescl,"HLT_PAJet40_noJetID_v1_Prescl/I");
+    nt->Branch("HLT_PAJet60_noJetID_v1_Prescl",&HLT_PAJet60_NoJetID_v1_Prescl,"HLT_PAJet60_noJetID_v1_Prescl/I");
+    nt->Branch("HLT_PAJet80_noJetID_v1_Prescl",&HLT_PAJet80_NoJetID_v1_Prescl,"HLT_PAJet80_noJetID_v1_Prescl/I");
+    nt->Branch("HLT_PAJet100_noJetID_v1_Prescl",&HLT_PAJet100_NoJetID_v1_Prescl,"HLT_PAJet100_noJetID_v1_Prescl/I");
     nt->Branch("pVertexFilterCutGplusUpsPP",&pVertexFilterCutGplusUpsPP,"pVertexFilterCutGplusUpsPP/I");
+    nt->Branch("pVertexFilterCutGplus",&pVertexFilterCutGplus,"pVertexFilterCutGplus/I");
   }
 
   if(isMC) nt->Branch("pthat",&t_pthat,"pthat/D");
@@ -734,32 +847,49 @@ Float_t gendrjt[1000];
    
   std::ifstream instr(infile.c_str(), std::ifstream::in);
   std::string filename;
+  vector<string> listVector;
+
+    for(int ifile=0; ifile<10292; ifile++){
+       instr >> filename;
+       listVector.push_back(filename);
+    }
+
   int nFiles=0;
   if(ppPbPb) nFiles=1;
   else if(isMC){
-    nFiles=QCDpthatBins;
+  if(endfile>0) nFiles=endfile ;
+    else nFiles=QCDpthatBins;
   }
   else{
-    nFiles=dataFiles;
+//    nFiles=dataFiles;
+   if(endfile>0 && endfile<dataFiles ) nFiles = endfile ; 
+  else nFiles = dataFiles ; 
   }
-  for(int ifile=0; ifile<nFiles; ifile++){
-    
+
+    TTree *t;
+    TTree *tEvt = NULL;
+    TTree *tHlt = NULL;
+      TBranch* tweight;
+//   vector<string> listVector;
+        double trgPrescl[5] = {HLT_PAJet20_NoJetID_v1_Prescl, HLT_PAJet40_NoJetID_v1_Prescl, HLT_PAJet60_NoJetID_v1_Prescl, HLT_PAJet80_NoJetID_v1_Prescl, HLT_PAJet100_NoJetID_v1_Prescl};
+        bool trgDec[5] = {(bool)HLT_PAJet20_NoJetID_v1, (bool)HLT_PAJet40_NoJetID_v1, (bool)HLT_PAJet60_NoJetID_v1, (bool)HLT_PAJet80_NoJetID_v1, (bool)HLT_PAJet100_NoJetID_v1};
+  for(int ifile = startfile; ifile<nFiles; ifile++){
     //Add b/c statistics to the HF statistics
-    if(!ppPbPb){
-      if((isMC && ifile<QCDpthatBins) || !isMC){
+   // if(!ppPbPb){
+    /*  if((isMC && ifile<QCDpthatBins) || !isMC){
         instr >> filename;
       }
-      std::cout << "File: " << filename << std::endl;
-      fin = TFile::Open(filename.c_str());
-    }
-    TTree *t;
+   */
+    //  fin = TFile::Open(filename.c_str(), "readonly");
+    //  fin = TFile::Open(listVector[ifile].data(), "readonly");
+      fin = TFile::Open(listVector.at(ifile).c_str(), "readonly");
+   std::cout << "File: " << listVector.at(ifile).c_str() << std::endl;
+ //   }
   //  if(usePUsub) 
        t = (TTree*) fin->Get(Form("%sJetAnalyzer/t", algo.Data()));
   //  else t = (TTree*) fin->Get("ak3PFJetAnalyzer/t");
     TTree *tSkim = (TTree*) fin->Get("skimanalysis/HltTree");
-    TTree *tEvt = NULL;
     if(!ppPbPb) tEvt = (TTree*) fin->Get("hiEvtAnalyzer/HiTree");
-    TTree *tHlt = NULL;
     if(!ppPbPb) tHlt = (TTree*) fin->Get("hltanalysis/HltTree");
     if(!t || !tSkim || (!tEvt&&!ppPbPb) || (!tHlt&&!ppPbPb)){ cout << "Error! Can't find one of the trees!" << endl; exit(0);}
      
@@ -825,7 +955,7 @@ Float_t gendrjt[1000];
     t->SetBranchAddress("mupt",mupt);
     if(ppPbPb) t->SetBranchAddress("muptPF",muptPF);
     if(!ppPbPb) t->SetBranchAddress("pVertexFilterCutGplusUpsPP",&pVertexFilterCutGplusUpsPP);
-
+    if(!ppPbPb) t->SetBranchAddress("pVertexFilterCutGplus",&pVertexFilterCutGplus);
     /*
 t->SetBranchAddress("mue",mue);
 t->SetBranchAddress("mueta",mueta);
@@ -851,7 +981,6 @@ t->SetBranchAddress("muchg",muchg);
       t->SetBranchAddress("refparton_isGSP",refparton_isGSP);
       
 
-      TBranch* tweight;
     //  if(isMC){
         tweight = t->GetBranch("weight");
         if(!tweight){
@@ -861,7 +990,8 @@ t->SetBranchAddress("muchg",muchg);
          }
         }
         if(!ppPbPb && !useWeight && ifile==0){
-         MCentr = countMCevents(infile, usePUsub, isMC);
+       //  MCentr = countMCevents(infile, usePUsub, isMC);
+         MCentr = countMCevents(infile, isMC);
         // MCentr = (int) nentries;
          // if(isMC>1){
          // for(int lm=HFpthatBins+2; lm<QCDpthatBins+1; lm++){
@@ -906,6 +1036,12 @@ t->SetBranchAddress("muchg",muchg);
       t->SetBranchAddress("HLT_PAJet60_NoJetID_v1",&HLT_PAJet60_NoJetID_v1);
       t->SetBranchAddress("HLT_PAJet80_NoJetID_v1",&HLT_PAJet80_NoJetID_v1);
       t->SetBranchAddress("HLT_PAJet100_NoJetID_v1",&HLT_PAJet100_NoJetID_v1);
+      t->SetBranchAddress("HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl",&HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl);
+      t->SetBranchAddress("HLT_PAJet20_NoJetID_v1_Prescl",&HLT_PAJet20_NoJetID_v1_Prescl);
+      t->SetBranchAddress("HLT_PAJet40_NoJetID_v1_Prescl",&HLT_PAJet40_NoJetID_v1_Prescl);
+      t->SetBranchAddress("HLT_PAJet60_NoJetID_v1_Prescl",&HLT_PAJet60_NoJetID_v1_Prescl);
+      t->SetBranchAddress("HLT_PAJet80_NoJetID_v1_Prescl",&HLT_PAJet80_NoJetID_v1_Prescl);
+      t->SetBranchAddress("HLT_PAJet100_NoJetID_v1_Prescl",&HLT_PAJet100_NoJetID_v1_Prescl);
       t->SetBranchAddress("pPAcollisionEventSelectionPA",&pPAcollisionEventSelectionPA);
       t->SetBranchAddress("pHBHENoiseFilter",&pHBHENoiseFilter);
       t->SetBranchAddress("pprimaryvertexFilter",&pprimaryvertexFilter);
@@ -943,8 +1079,9 @@ t->SetBranchAddress("muchg",muchg);
 
       if(!ppPbPb){
         if(!isMC){
-          if(!pHBHENoiseFilter || !pprimaryvertexFilter || !pPAcollisionEventSelectionPA) continue;
-    //  if(!HLT_PAZeroBiasPixel_SingleTrack_v1 && !HLT_PAJet40_NoJetID_v1 && !HLT_PAJet60_NoJetID_v1 && !HLT_PAJet80_NoJetID_v1) continue;
+        //  if(!pHBHENoiseFilter || !pprimaryvertexFilter || !pPAcollisionEventSelectionPA || !pVertexFilterCutGplus) continue;
+          if(!pHBHENoiseFilter || !pprimaryvertexFilter || !pPAcollisionEventSelectionPA ) continue;
+      if(!HLT_PAZeroBiasPixel_SingleTrack_v1 && !HLT_PAJet20_NoJetID_v1 && !HLT_PAJet40_NoJetID_v1 && !HLT_PAJet60_NoJetID_v1 && !HLT_PAJet80_NoJetID_v1 && !HLT_PAJet100_NoJetID_v1 ) continue;
         }
      /*   else{
           if(!pHBHENoiseFilter || !pPAcollisionEventSelectionPA) continue;
@@ -957,7 +1094,43 @@ t->SetBranchAddress("muchg",muchg);
      // if((t_hiHFplusEta4+t_hiHFminusEta4)<2.87) continue ;
       }
 
-      
+      for(int j=0; j<5; j++){ trigObjSize[j] = HLT_PAJet_NoJetID_v1_trigObject[j]->size();}
+         //Fill the trigger Pt/Eta/Phi from the TriggerObjects
+         for(int ii=0; ii<5; ii++){
+            for(unsigned int iObj=0; iObj<trigObjSize[ii]; iObj++){
+               trigObjPt[ii][iObj] = HLT_PAJet_NoJetID_v1_trigObject[ii]->at(iObj).pt();
+               trigObjEta[ii][iObj] = HLT_PAJet_NoJetID_v1_trigObject[ii]->at(iObj).eta();
+               trigObjPhi[ii][iObj] = HLT_PAJet_NoJetID_v1_trigObject[ii]->at(iObj).phi();
+            }
+         }
+
+/*         //Protection against random trigger benefit
+                int maxtrg= -1;
+             for(int ii=4; ii>=0; ii--){
+                 if(trgDec[ii]==1){
+                      maxtrg=ii;
+                      break;
+                    }
+                }
+          float maximumTrgPt=0;
+                bool rtBenefitFlag=0;
+                for(int ii=0; ii<5; ii++){
+                    for(unsigned int iObj=0; iObj<trigObjSize[ii]; iObj++){
+                        if(trigObjPt[ii][iObj]>=(20+maxtrg*20)) rtBenefitFlag=1;
+                        if(trigObjPt[ii][iObj]>maximumTrgPt) maximumTrgPt = trigObjPt[ii][iObj];
+                    }
+                }
+                if(!isMC && (maxtrg==-1 || !rtBenefitFlag)){
+                    cout << "event skipped from RT!" << endl;
+                    cout << "maxtrg: " << (20+20*maxtrg) << endl;
+                    cout << "trgPt: " << maximumTrgPt << endl;
+                    continue;
+                }
+                //end rtbenefit protection
+  */        std::set<int> usedObjNos;
+          std::set<int> usedtrgNos;
+
+ 
       if(ppPbPb){
         if(cbin==-1){
          // do nothing
@@ -987,30 +1160,8 @@ t->SetBranchAddress("muchg",muchg);
 //      }
       
 
-    //  if(fabs(vz)>15.) continue;
+      if(fabs(vz)>15.) continue;
       
-      // pileup rejection
-      if(ppPbPb && hf>150000.){
-        cout<<" rejecting pileup, "<<" hf "<<hf<<" bin "<<bin<<endl;
-        for(int ij=0;ij<nref;ij++) if(jtpt[ij]>20.&&fabs(jteta[ij])<3.)cout<<" # associated tracks = "<<nselIPtrk[ij]<<endl;
-        continue;
-      }
-      bool isNoise=false;
-      if(ppPbPb){
-        for(int ij=0; ij<nref; ij++){        
-         if(jtpt[ij]>minJetPt&&fabs(jteta[ij])<3){
-         if(neutralMax[ij]/(neutralMax[ij]+chargedMax[ij]+photonMax[ij])>0.975){
-         cout<<" cleaning event with jet of "<<jtpt[ij]<<", eta "<<jteta[ij]<<" noise = "<<neutralMax[ij]/(neutralMax[ij]+chargedMax[ij]+photonMax[ij])<<endl;
-         isNoise=true;
-         }
-         if(chargedSum[ij]+photonSum[ij]+neutralSum[ij]+muSum[ij]+eSum[ij]<0.5*rawpt[ij]){
-         cout<<" cleaning event with jet of "<<jtpt[ij]<<", eta "<<jteta[ij]<<" sum PF pt = "<<chargedSum[ij]+photonSum[ij]+neutralSum[ij]+muSum[ij]+eSum[ij]<<endl;
-         isNoise=true;
-         }
-         }
-        }
-      }
-      if(isNoise) continue;
       
         
       
@@ -1027,16 +1178,15 @@ t->SetBranchAddress("muchg",muchg);
         if(isMC)w=weight;
       }
    */   //trigger weighting in pp data
-      if(!ppPbPb && !isMC){
-        bool trgDec[6] = {(bool)HLT_PAZeroBiasPixel_SingleTrack_v1, (bool)HLT_PAJet20_NoJetID_v1, (bool)HLT_PAJet40_NoJetID_v1, (bool)HLT_PAJet60_NoJetID_v1, (bool)HLT_PAJet80_NoJetID_v1, (bool)HLT_PAJet100_NoJetID_v1};
-      //  w = trigComb(trgDec, pscls);
-      }
+ //     if(!ppPbPb && !isMC){
+      //  bool trgDec[6] = {(bool)HLT_PAZeroBiasPixel_SingleTrack_v1, (bool)HLT_PAJet20_NoJetID_v1, (bool)HLT_PAJet40_NoJetID_v1, (bool)HLT_PAJet60_NoJetID_v1, (bool)HLT_PAJet80_NoJetID_v1, (bool)HLT_PAJet100_NoJetID_v1};
+ //     }
 
       
       //Do the weighting = x-sec / Nentries, where Nentries is weighted differently for B/C jets and QCD jets
       if(isMC){
         bool isFiltered=0;
-        double vzWeight=1;
+        vzWeight=1;
         t_pthat=pthat;
         int j=0;
          
@@ -1078,6 +1228,43 @@ t->SetBranchAddress("muchg",muchg);
       int useEvent=0;
       
       int trackPosition =0;
+      triggerPt=0;
+       //lets get the leading jet information here
+      int leadJetIndex = -1;
+      float leadJetPt = minJetPt ;
+     for(int ij=0;ij<nref;ij++){
+        if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ;
+        	float jetpt = jtpt[ij];
+                if(jetpt>leadJetPt){
+                 leadJetPt = jetpt;
+                leadJetIndex = ij;
+              }
+
+   }
+
+   for(int ij=0;ij<nref;ij++){
+        if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ; 
+    //to assigne the trigger pt according to its trigger combination method
+    if(useJetTrgAssociation){
+      for(int ii=0; ii<5; ii++){
+        if(trgDec[ii]){
+          triggerPt = triggerMatch(trigObjSize[ii], trigObjPhi[ii], trigObjEta[ii], trigObjPt[ii], jtphi[ij], jteta[ij], jtpt[ij]);
+     //if you find a trigger match that has the right pt window for that particular trigger, break out of the for loop!
+           if((triggerPt>(ii+1)*20 && triggerPt<(ii+2)*20) || (triggerPt>100 && ii==4)){
+                  break;
+             }
+          }
+        }
+      }
+  else{
+    triggerPt = leadJetPt;
+    }
+
+  //      w = trigComb(trgDec, trgPrescl);
+    w = trigComb(trgDec, trgPrescl, triggerPt, combinationMethod);
+ } //end of leading jet search
+//  triggerPt = leadJetPt;
+
 
       for(int ij=0;ij<nref;ij++){
       
@@ -1095,18 +1282,19 @@ t->SetBranchAddress("muchg",muchg);
 //         if(gspCounter%2==0) continue;
 //         }        
 //        }
-       //   if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ; 
+          if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ; 
         //  if(isMC && subid[ij]!=0) continue ;
         //  if(isMC && jtpt[ij]>4*pthat) continue ;
       //  if(jtpt[ij]>minJetPt && fabs(jteta[ij])<maxJetEta){
         if(jtpt[ij]>minJetPt ){
+            
          if(doNtuples){
         
          t_jtpt=jtpt[ij];
          t_jteta=jteta[ij];
          t_jtphi=jtphi[ij];
          t_rawpt=rawpt[ij];
-         t_refpt=refpt[ij];
+         if(isMC)t_refpt=refpt[ij];
          t_subid=subid[ij];
          t_refparton_flavorForB=refparton_flavorForB[ij];
          t_discr_prob=discr_prob[ij];
@@ -1141,7 +1329,7 @@ t->SetBranchAddress("muchg",muchg);
         
        //  hjtpt->Fill(jtpt[ij],w);
         if(TMath::Abs((jteta[ij]+0.465))<=1.)hjtpt->Fill(jtpt[ij],w);
-        if(TMath::Abs((jteta[ij]+0.465))<=1.)hrefpt->Fill(refpt[ij], w);
+        if(isMC && TMath::Abs((jteta[ij]+0.465))<=1.)hrefpt->Fill(refpt[ij], w);
           Int_t dEtaBin = -1 ;
           for(Int_t ieta = 0 ; ieta <netabin; ieta++){
            if((jteta[ij]+0.465)>deta[ieta]&&(jteta[ij]+0.465)<=deta[ieta+1]) dEtaBin = ieta ;
@@ -1224,15 +1412,24 @@ t->SetBranchAddress("muchg",muchg);
         }
         else hvz->Fill(vz);
       }
-      
+      //reset event-level containers
+      usedObjNos.clear();
+      usedtrgNos.clear();
+     for(int ii=0; ii<5; ii++){ HLT_PAJet_NoJetID_v1_trigObject[ii]->clear(); }       
     }  //! events loop
+    //close file before moving to the next one!!
+    fin->Close();
+    t = NULL ;
+    tEvt = NULL;
+    tHlt = NULL;
+    tweight = NULL; 
   } //! file loop
   fout->cd();
 
   hbin->Write(); hbinw->Write(); hvz->Write(); hvzw->Write();
   
   hjtpt->Write();
-  hrefpt->Write();
+  if(isMC)hrefpt->Write();
   hpthat->Write();
   hpthatw->Write();
   hpthatcs->Write();
