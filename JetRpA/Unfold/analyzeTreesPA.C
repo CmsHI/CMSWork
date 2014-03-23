@@ -159,7 +159,7 @@ double trigComb(bool *trg, double *pscl, double pt, int combinationMethod){
 */
  if(combinationMethod==1){ 
    //Final CMS Methodology - jet-by-jet weighting method for CMS trigger-type setup.
-        if(trg[4] && pt>=100) weight = pscl[4];
+        if(trg[4] && pt>=100) weight = 1; //pscl[4];
         if(trg[3] && pt>=80 && pt<100) weight = pscl[3];
         if(trg[2] && pt>=60 && pt<80) weight = pscl[2];
         if(trg[1] && pt>=40 && pt<60) weight = pscl[1];
@@ -167,10 +167,10 @@ double trigComb(bool *trg, double *pscl, double pt, int combinationMethod){
  }
  else {
  //HIN-12-017 (charged part RpA) combination method - solid but loses events that slip through the pt bins
-    if(trg[0] && pt>40 && pt<60) weight = pscl[0];
-    if(trg[1] && pt>60 && pt<75) weight = pscl[1];
-    if(trg[2] && pt>75 && pt<95) weight = pscl[2];
-    if(trg[3] && pt>95 && pt<120) weight = pscl[3];
+    if(trg[0] && pt>40 && pt<=60) weight = pscl[0];
+    if(trg[1] && pt>60 && pt<=75) weight = pscl[1];
+    if(trg[2] && pt>75 && pt<=95) weight = pscl[2];
+    if(trg[3] && pt>95 && pt<=120) weight = pscl[3];
     if(trg[4] && pt>120) weight = 1.;
  }   
   return weight;
@@ -254,12 +254,19 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   // isMC=0 --> Real data, ==1 --> QCD, ==2 --> bJet, ==3 --> cJet
   Float_t minJetPt=0.;
   
-  Float_t maxJetEta=3.;
+  Float_t maxJetEta=5.;
   Float_t minMuPt=5;
+  TString coll = "PPb";
   if(useJetTrgAssociation)  combinationMethod = 1 ;
-  else combinationMethod = 2 ;
+  else combinationMethod = 0 ;
+   if(isMC){
+     startfile=0;
+     endfile=QCDpthatBins ;
+    }
+   else {
       startfile=atoi(getenv("FIRST"));
     endfile=atoi(getenv("LAST"));
+    }
    cout <<"analysis  "  << "  in file " << startfile << "  and " <<endfile<<endl ;
 
   timer.Start();  
@@ -269,8 +276,8 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   // cbin =2 --> 50-100%
   if(!ppPbPb) cbin=-1;
   int useWeight=1;
-  double         triggerPt;
-  trigO *HLT_PAJet_NoJetID_v1_trigObject[6];
+//  double         triggerPt;
+  trigO *HLT_PAJet_NoJetID_v1_trigObject[5];
     int trigObjSize[5];
 
   float trigObjPt[5][1000];
@@ -378,6 +385,10 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   Int_t nIPtrk[1000];
   Int_t nselIPtrk[1000];
   Int_t nIP;
+  Int_t nTrk;
+  Int_t trkPt[1000];
+  Int_t trkPhi[1000];
+  Int_t trkEta[1000];
   Int_t ipJetIndex[10000];
   Float_t ipPt[10000];
   Float_t ipProb0[10000];
@@ -411,18 +422,18 @@ void analyzeTreesPA(int isRecopp=1, int ppPbPb=0, int isMC=1, int doNtuples=1, i
   Int_t refparton_flavor[1000];
   Int_t refparton_flavorForB[1000];
   Bool_t refparton_isGSP[1000];
-  Bool_t          HLT_PAZeroBiasPixel_SingleTrack_v1;
-  Bool_t          HLT_PAJet20_NoJetID_v1;
-  Bool_t          HLT_PAJet40_NoJetID_v1;
-  Bool_t          HLT_PAJet60_NoJetID_v1;
-  Bool_t          HLT_PAJet80_NoJetID_v1;
-  Bool_t          HLT_PAJet100_NoJetID_v1;
-  Double_t          HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl;
-  Double_t          HLT_PAJet20_NoJetID_v1_Prescl;
-  Double_t          HLT_PAJet40_NoJetID_v1_Prescl;
-  Double_t          HLT_PAJet60_NoJetID_v1_Prescl;
-  Double_t          HLT_PAJet80_NoJetID_v1_Prescl;
-  Double_t          HLT_PAJet100_NoJetID_v1_Prescl;
+  Int_t          HLT_PAZeroBiasPixel_SingleTrack_v1;
+  Int_t          HLT_PAJet20_NoJetID_v1;
+  Int_t          HLT_PAJet40_NoJetID_v1;
+  Int_t          HLT_PAJet60_NoJetID_v1;
+  Int_t          HLT_PAJet80_NoJetID_v1;
+  Int_t          HLT_PAJet100_NoJetID_v1;
+  Int_t          HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl;
+  Int_t          HLT_PAJet20_NoJetID_v1_Prescl;
+  Int_t          HLT_PAJet40_NoJetID_v1_Prescl;
+  Int_t          HLT_PAJet60_NoJetID_v1_Prescl;
+  Int_t          HLT_PAJet80_NoJetID_v1_Prescl;
+  Int_t          HLT_PAJet100_NoJetID_v1_Prescl;
   Int_t pVertexFilterCutGplusUpsPP;
   Int_t pVertexFilterCutGplus;
   Int_t pPAcollisionEventSelectionPA;
@@ -509,11 +520,14 @@ Float_t gendrjt[1000];
   TH1D *hrawptL = new TH1D("hrawptL","hrawptL",68,80,330);
   hrawpt->Sumw2(); hrawptB->Sumw2(); hrawptC->Sumw2(); hrawptL->Sumw2();
 
-  TH1D *hjteta = new TH1D("hjteta","hjteta",40,-3,3);
+  TH1F *hjteta = new TH1F("hjteta","hjteta",100,-5,5);
   TH1D *hjtetaB = new TH1D("hjtetaB","hjtetaB",40,-2,2);
   TH1D *hjtetaC = new TH1D("hjtetaC","hjtetaC",40,-2,2);
   TH1D *hjtetaL = new TH1D("hjtetaL","hjtetaL",40,-2,2);
+    TH1F *hrefeta = new TH1F("hrefeta","hrefeta",100,-5,5);
+  TProfile *hetares = new TProfile("hetares","hetares",100,-5,5);
   hjteta->Sumw2(); hjtetaB->Sumw2(); hjtetaC->Sumw2(); hjtetaL->Sumw2();
+  hrefeta->Sumw2();  hetares->Sumw2();
 
   TH1D *hjtphi = new TH1D("hjtphi","hjtphi",40,-1.*acos(-1.),acos(-1.));
   TH1D *hjtphiB = new TH1D("hjtphiB","hjtphiB",40,-1.*acos(-1.),acos(-1.));
@@ -767,23 +781,27 @@ Float_t gendrjt[1000];
   TH1D *hipClosest2JetL = new TH1D("hipClosest2JetL","hipClosest2JetL",40,0,1);
   hipClosest2Jet->Sumw2(); hipClosest2JetB->Sumw2(); hipClosest2JetC->Sumw2(); hipClosest2JetL->Sumw2();
 
-  Double_t t_jtpt, t_jteta, t_jtphi, t_rawpt, t_refpt, t_subid, t_discr_prob, t_discr_ssvHighEff, t_discr_ssvHighPur, t_discr_csvSimple, t_svtxm;
-  Double_t t_pthat, t_weight;
+  Double_t t_jtpt, t_jteta, t_jtphi, t_rawpt, t_refpt,  t_refeta, t_subid, t_discr_prob, t_discr_ssvHighEff, t_discr_ssvHighPur, t_discr_csvSimple, t_svtxm;
+  Double_t t_pthat, t_weight, t_nref, t_vz;
   Int_t t_refparton_flavorForB;
-  Int_t trigIndex, t_bin;
+  Int_t trigIndex, t_bin, t_run;
   Double_t         t_hiHFplusEta4;
   Double_t         t_hiHFminusEta4;
   Int_t t_nIP;
   Double_t t_ipPt[100], t_ipProb0[100];
   Int_t t_ipJetIndex[100];
-
+  Int_t t_nTrk;
+   Double_t t_trkPt[1000], t_trkEta[1000], t_trkPhi[1000];
   TTree *nt = new TTree("nt","");
+
+  nt->Branch("nref",&t_nref, "nref/I");
   nt->Branch("jtpt",&t_jtpt,"jtpt/D");
   nt->Branch("jteta",&t_jteta,"jteta/D");
   nt->Branch("jtphi",&t_jtphi,"jtphi/D");
   nt->Branch("subid",&t_subid,"subid/I");
   nt->Branch("rawpt",&t_rawpt,"rawpt/D");
-  nt->Branch("refpt",&t_refpt,"refpt/D");
+ if(isMC) nt->Branch("refpt",&t_refpt,"refpt/D");
+ if(isMC) nt->Branch("refeta",&t_refeta,"refeta/D");
   nt->Branch("refparton_flavorForB",&t_refparton_flavorForB,"refparton_flavorForB/I");
   nt->Branch("discr_prob",&t_discr_prob,"discr_prob/D");
   nt->Branch("discr_ssvHighEff",&t_discr_ssvHighEff,"discr_ssvHighEff/D");
@@ -791,6 +809,8 @@ Float_t gendrjt[1000];
   nt->Branch("discr_csvSimple",&t_discr_csvSimple,"discr_csvSimple/D");
   nt->Branch("svtxm",&t_svtxm,"svtxm/D");
   nt->Branch("bin",&t_bin,"bin/I");
+  nt->Branch("run",&t_run,"run/I");
+  nt->Branch("vz",&t_vz,"vz/D");
   nt->Branch("hiHFplusEta4",&t_hiHFplusEta4,"hiHFplusEta4/D");
   nt->Branch("hiHFminusEta4",&t_hiHFminusEta4,"hiHFminusEta4/D");
   if(ppPbPb){
@@ -802,7 +822,13 @@ Float_t gendrjt[1000];
     nt->Branch("ipProb0",t_ipProb0,"ipProb0[nIP]/D");
     nt->Branch("ipJetIndex",t_ipJetIndex,"ipJetIndex[nIP]/I");
   }
-  if(!ppPbPb){
+    if(doTracks){
+    nt->Branch("nTrk",&t_nTrk);
+    nt->Branch("trkPt",t_trkPt,"trkPt[nTrk]/D");
+    nt->Branch("trkPhi",t_trkPhi,"trkPhi[nTrk]/D");
+    nt->Branch("trkEta",t_trkEta,"trkEta[nTrk]/D");
+  }
+  if(!ppPbPb && !isMC){
       nt->Branch("HLT_PAZeroBiasPixel_SingleTrack_v1 ",&HLT_PAZeroBiasPixel_SingleTrack_v1,"HLT_PAZeroBiasPixel_SingleTrack_v1/I");
     nt->Branch("HLT_PAJet20_noJetID_v1",&HLT_PAJet20_NoJetID_v1,"HLT_PAJet20_noJetID_v1/I");
     nt->Branch("HLT_PAJet40_noJetID_v1",&HLT_PAJet40_NoJetID_v1,"HLT_PAJet40_noJetID_v1/I");
@@ -848,72 +874,83 @@ Float_t gendrjt[1000];
   std::ifstream instr(infile.c_str(), std::ifstream::in);
   std::string filename;
   vector<string> listVector;
-
+ if(!isMC){
     for(int ifile=0; ifile<10292; ifile++){
        instr >> filename;
        listVector.push_back(filename);
     }
+ } 
 
   int nFiles=0;
   if(ppPbPb) nFiles=1;
   else if(isMC){
-  if(endfile>0) nFiles=endfile ;
-    else nFiles=QCDpthatBins;
+    endfile=QCDpthatBins ;
+   startfile=0 ; 
+    nFiles=QCDpthatBins;
   }
   else{
 //    nFiles=dataFiles;
    if(endfile>0 && endfile<dataFiles ) nFiles = endfile ; 
   else nFiles = dataFiles ; 
   }
+     float w = 1.;
 
     TTree *t;
     TTree *tEvt = NULL;
     TTree *tHlt = NULL;
+    TTree *tTrk = NULL;
       TBranch* tweight;
 //   vector<string> listVector;
-        double trgPrescl[5] = {HLT_PAJet20_NoJetID_v1_Prescl, HLT_PAJet40_NoJetID_v1_Prescl, HLT_PAJet60_NoJetID_v1_Prescl, HLT_PAJet80_NoJetID_v1_Prescl, HLT_PAJet100_NoJetID_v1_Prescl};
+       double trgPrescl[5] = {(double)HLT_PAJet20_NoJetID_v1_Prescl, (double)HLT_PAJet40_NoJetID_v1_Prescl, (double)HLT_PAJet60_NoJetID_v1_Prescl, (double)HLT_PAJet80_NoJetID_v1_Prescl, (double)HLT_PAJet100_NoJetID_v1_Prescl};
         bool trgDec[5] = {(bool)HLT_PAJet20_NoJetID_v1, (bool)HLT_PAJet40_NoJetID_v1, (bool)HLT_PAJet60_NoJetID_v1, (bool)HLT_PAJet80_NoJetID_v1, (bool)HLT_PAJet100_NoJetID_v1};
+   //     double trgPrescl[6] = {HLT_PAZeroBiasPixel_SingleTrack_v1_Prescl, HLT_PAJet20_NoJetID_v1_Prescl, HLT_PAJet40_NoJetID_v1_Prescl, HLT_PAJet60_NoJetID_v1_Prescl, HLT_PAJet80_NoJetID_v1_Prescl, HLT_PAJet100_NoJetID_v1_Prescl};
+  //      bool trgDec[6] = {(bool)HLT_PAZeroBiasPixel_SingleTrack_v1, (bool)HLT_PAJet20_NoJetID_v1, (bool)HLT_PAJet40_NoJetID_v1, (bool)HLT_PAJet60_NoJetID_v1, (bool)HLT_PAJet80_NoJetID_v1, (bool)HLT_PAJet100_NoJetID_v1};
   for(int ifile = startfile; ifile<nFiles; ifile++){
     //Add b/c statistics to the HF statistics
    // if(!ppPbPb){
-    /*  if((isMC && ifile<QCDpthatBins) || !isMC){
+   if(isMC){ 
+     if(( ifile<QCDpthatBins) || !isMC){
         instr >> filename;
       }
-   */
-    //  fin = TFile::Open(filename.c_str(), "readonly");
-    //  fin = TFile::Open(listVector[ifile].data(), "readonly");
+      fin = TFile::Open(filename.c_str(), "readonly");
+   std::cout << "File: " << filename.c_str() << std::endl;
+   }
+  else { 
       fin = TFile::Open(listVector.at(ifile).c_str(), "readonly");
    std::cout << "File: " << listVector.at(ifile).c_str() << std::endl;
- //   }
+    }
   //  if(usePUsub) 
        t = (TTree*) fin->Get(Form("%sJetAnalyzer/t", algo.Data()));
   //  else t = (TTree*) fin->Get("ak3PFJetAnalyzer/t");
     TTree *tSkim = (TTree*) fin->Get("skimanalysis/HltTree");
     if(!ppPbPb) tEvt = (TTree*) fin->Get("hiEvtAnalyzer/HiTree");
     if(!ppPbPb) tHlt = (TTree*) fin->Get("hltanalysis/HltTree");
+    if(!ppPbPb) tTrk = (TTree*) fin->Get("ppTrack/trackTree");
     if(!t || !tSkim || (!tEvt&&!ppPbPb) || (!tHlt&&!ppPbPb)){ cout << "Error! Can't find one of the trees!" << endl; exit(0);}
      
     if(tEvt) t->AddFriend("hiEvtAnalyzer/HiTree");
-    if(tHlt) t->AddFriend("hltanalysis/HltTree");
     if(tSkim) t->AddFriend("skimanalysis/HltTree");
+    if(tHlt) t->AddFriend("hltanalysis/HltTree");
+    if(tTrk) t->AddFriend("ppTrack/trackTree");
      
     Long64_t nentries = t->GetEntries();
-     float w = 1.;
 
     t->SetBranchAddress("evt",&evt);
     t->SetBranchAddress("lumi",&lumi);
+   // t->SetBranchAddress("run",&run);
     if(cbin != -1 || ppPbPb) t->SetBranchAddress("bin",&bin);
     if(!isMC) t->SetBranchAddress("run",&run);
     if(ppPbPb) t->SetBranchAddress("hf",&hf);
     t->SetBranchAddress("vz",&vz);
+    t->SetBranchAddress("weight",&weight);
     t->SetBranchAddress("nref",&nref);
-    t->SetBranchAddress("rawpt",rawpt);
-    t->SetBranchAddress("jtpt",jtpt);
-    t->SetBranchAddress("jteta",jteta);
-    t->SetBranchAddress("jtphi",jtphi);
+    t->SetBranchAddress("rawpt",&rawpt);
+    t->SetBranchAddress("jtpt",&jtpt);
+    t->SetBranchAddress("jteta",&jteta);
+    t->SetBranchAddress("jtphi",&jtphi);
     if(!ppPbPb){
-      t->SetBranchAddress("jtpu",jtpu);
-      t->SetBranchAddress("jty",jty);
+      t->SetBranchAddress("jtpu",&jtpu);
+      t->SetBranchAddress("jty",&jty);
     }
     t->SetBranchAddress("discr_ssvHighEff",discr_ssvHighEff);
     t->SetBranchAddress("discr_ssvHighPur",discr_ssvHighPur);
@@ -950,6 +987,11 @@ Float_t gendrjt[1000];
       t->SetBranchAddress("ipDist2Jet",ipDist2Jet);
       //t->SetBranchAddress("ipDist2JetSig",ipDist2JetSig);
       t->SetBranchAddress("ipClosest2Jet",ipClosest2Jet);
+
+      t->SetBranchAddress("nTrk",&nTrk);
+      t->SetBranchAddress("trkPt",&trkPt);
+      t->SetBranchAddress("trkPhi",&trkPhi);
+      t->SetBranchAddress("trkEta",&trkEta);     
     }
 
     t->SetBranchAddress("mupt",mupt);
@@ -964,6 +1006,7 @@ t->SetBranchAddress("mudr",mudr);
 t->SetBranchAddress("muptrel",muptrel);
 t->SetBranchAddress("muchg",muchg);
 */
+        tweight = t->GetBranch("weight");
     if(isMC){
       t->SetBranchAddress("pthat",&pthat);
       t->SetBranchAddress("beamId1",&beamId1);
@@ -982,7 +1025,6 @@ t->SetBranchAddress("muchg",muchg);
       
 
     //  if(isMC){
-        tweight = t->GetBranch("weight");
         if(!tweight){
          if(ifile==0){
          cout << "Weight not found in Tree. Calculating..." << endl;
@@ -1014,7 +1056,6 @@ t->SetBranchAddress("muchg",muchg);
     t->SetBranchAddress("eSum",eSum);
     
     if(isMC&&useWeight){
-      t->SetBranchAddress("weight",&weight);
       t->SetBranchAddress("xSecWeight",&xSecWeight);
       if(ppPbPb)t->SetBranchAddress("centWeight",&centWeight);
       t->SetBranchAddress("vzWeight",&vzWeight);
@@ -1073,15 +1114,17 @@ t->SetBranchAddress("muchg",muchg);
       }
 
       //Cut to remove events that correspond to the twiki "good events" but not the golden lumi filter
-      if(!isMC){
-        if(((int)run>211256 ) || ((int)run<210676 )) continue;
+  /*    if(!isMC){
+      //  if(((int)run>211256 ) || ((int)run<210676 )) continue;
+        if(((int)run>211256 ) ) continue;
       }
-
+*/
       if(!ppPbPb){
         if(!isMC){
         //  if(!pHBHENoiseFilter || !pprimaryvertexFilter || !pPAcollisionEventSelectionPA || !pVertexFilterCutGplus) continue;
           if(!pHBHENoiseFilter || !pprimaryvertexFilter || !pPAcollisionEventSelectionPA ) continue;
-      if(!HLT_PAZeroBiasPixel_SingleTrack_v1 && !HLT_PAJet20_NoJetID_v1 && !HLT_PAJet40_NoJetID_v1 && !HLT_PAJet60_NoJetID_v1 && !HLT_PAJet80_NoJetID_v1 && !HLT_PAJet100_NoJetID_v1 ) continue;
+    //  if(!HLT_PAZeroBiasPixel_SingleTrack_v1 && !HLT_PAJet20_NoJetID_v1 && !HLT_PAJet40_NoJetID_v1 && !HLT_PAJet60_NoJetID_v1 && !HLT_PAJet80_NoJetID_v1 && !HLT_PAJet100_NoJetID_v1 ) continue;
+      if(!HLT_PAJet20_NoJetID_v1 && !HLT_PAJet40_NoJetID_v1 && !HLT_PAJet60_NoJetID_v1 && !HLT_PAJet80_NoJetID_v1 && !HLT_PAJet100_NoJetID_v1 ) continue;
         }
      /*   else{
           if(!pHBHENoiseFilter || !pPAcollisionEventSelectionPA) continue;
@@ -1153,8 +1196,10 @@ t->SetBranchAddress("muchg",muchg);
          return;
         }
       }
-      else t_bin=100;
-      
+      else t_bin=bin;
+       t_run = run ;
+       t_vz = vz ;
+ 
 //      if(isMC&&!ppPbPb){
 //        if(beamId1==2112 || beamId2==2112) continue;
 //      }
@@ -1194,7 +1239,6 @@ t->SetBranchAddress("muchg",muchg);
      //   while(j<QCDpthatBins) {
      //      j++;
      //  cout <<"j==" << j <<endl ; 
-      // for(j=0 ; j <QCDpthatBins ; j++){
          if(j==QCDpthatBins) 
            w = ((wght[j-1])/MCentr[j-1]); //wght[0] = pthat>15, MCentr[0] = pthat<15. I know it's dumb - bear with me.
          else 
@@ -1223,26 +1267,29 @@ t->SetBranchAddress("muchg",muchg);
         hpthatw->Fill(pthat, xSecWeight);
         hpthatcs->Fill(pthat, TMath::Log10(xSecWeight));
       }
-      else t_weight=w;
+    //  else t_weight=w;
+   t_nref = nref;
+   t_nTrk =  nTrk;
 
       int useEvent=0;
       
       int trackPosition =0;
-      triggerPt=0;
+  //    triggerPt=0;
        //lets get the leading jet information here
       int leadJetIndex = -1;
       float leadJetPt = minJetPt ;
      for(int ij=0;ij<nref;ij++){
-        if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ;
+        if(rawpt[ij]<22.&&fabs(jteta[ij])>maxJetEta) continue ;
         	float jetpt = jtpt[ij];
                 if(jetpt>leadJetPt){
                  leadJetPt = jetpt;
                 leadJetIndex = ij;
               }
 
-   }
+   } //! end of leading jet search
 
-   for(int ij=0;ij<nref;ij++){
+  //old implementation with trigger Obj mathcing to offline jets
+/*   for(int ij=0;ij<nref;ij++){
         if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ; 
     //to assigne the trigger pt according to its trigger combination method
     if(useJetTrgAssociation){
@@ -1264,9 +1311,63 @@ t->SetBranchAddress("muchg",muchg);
     w = trigComb(trgDec, trgPrescl, triggerPt, combinationMethod);
  } //end of leading jet search
 //  triggerPt = leadJetPt;
+*/
+ // new implementation with max trigger Obj for weight calculation
+    double trgPtWeight=0;
+    double maxTrgPt =0;
+      double maxpt=0;
+      int maxtrg=-1;
+  if(!isMC){
+   if(useJetTrgAssociation){
+    for(int ii=0; ii<5; ii++){
+       if(trgDec[ii]){
+       	  for(int isize=0; isize<trigObjSize[ii]; isize++){
+	    double triggerPt = HLT_PAJet_NoJetID_v1_trigObject[ii]->at(isize).pt();
+	    if(triggerPt > maxpt && (triggerPt-TMath::Floor(triggerPt)) > 0.0001){
+	 //   if(triggerPt > maxpt ){
+	      maxpt = triggerPt;
+             cout <<" Kurt maxPt found " << maxpt << endl ;
+	      maxtrg = ii;
+	    }
+	  }
+	}      
+      }
+        
+     if(maxtrg>=0 && maxtrg<5){
+         maxTrgPt = maxpt;
+        cout <<" maxTrgPt found " << maxTrgPt << endl ;
+        trgPtWeight = trgPrescl[maxtrg];
+        combinationMethod = 1 ;
+    }
+  }
+   else {
+       maxTrgPt = leadJetPt;
+       if(maxTrgPt >40 && maxTrgPt <=60) trgPtWeight = trgPrescl[0];
+       if(maxTrgPt >60 && maxTrgPt <=75) trgPtWeight = trgPrescl[1];
+       if(maxTrgPt >75 && maxTrgPt <=95) trgPtWeight = trgPrescl[2];
+       if(maxTrgPt >95 && maxTrgPt <=120) trgPtWeight = trgPrescl[3];
+       if(maxTrgPt >120 ) trgPtWeight = trgPrescl[4];
+        cout <<" maxTrgPt found " << maxTrgPt << endl ;
+      combinationMethod = 0 ;
+   }
+    w = trigComb(trgDec, trgPrescl, maxTrgPt, combinationMethod);
+   t_weight=w;
+ } //only for data weight
+ 
+         //inclusive track 
+        if(doTracks){
+         int counter=0;
+         for(int itrk=0; itrk<nTrk; itrk++){
+                if(TMath::Abs(trkEta[itrk]) <2.4){
+                 t_trkPt[counter] = trkPt[itrk];
+                 t_trkPhi[counter] = trkPhi[itrk];
+                 t_trkEta[counter] = trkEta[itrk];
+                 counter++;
+                }
+         }
+         }
 
-
-      for(int ij=0;ij<nref;ij++){
+   for(int ij=0;ij<nref;ij++){
       
         trackPosition+=nselIPtrk[ij];
       
@@ -1282,7 +1383,7 @@ t->SetBranchAddress("muchg",muchg);
 //         if(gspCounter%2==0) continue;
 //         }        
 //        }
-          if(rawpt[ij]<20.&&fabs(jteta[ij])>maxJetEta) continue ; 
+          if(rawpt[ij]<22.&&fabs(jteta[ij])>maxJetEta) continue ; 
         //  if(isMC && subid[ij]!=0) continue ;
         //  if(isMC && jtpt[ij]>4*pthat) continue ;
       //  if(jtpt[ij]>minJetPt && fabs(jteta[ij])<maxJetEta){
@@ -1295,6 +1396,7 @@ t->SetBranchAddress("muchg",muchg);
          t_jtphi=jtphi[ij];
          t_rawpt=rawpt[ij];
          if(isMC)t_refpt=refpt[ij];
+         if(isMC)t_refeta=refeta[ij];
          t_subid=subid[ij];
          t_refparton_flavorForB=refparton_flavorForB[ij];
          t_discr_prob=discr_prob[ij];
@@ -1328,18 +1430,42 @@ t->SetBranchAddress("muchg",muchg);
          useEvent=1;
         
        //  hjtpt->Fill(jtpt[ij],w);
+       if(isMC){
+        if(coll=="PPb"){
         if(TMath::Abs((jteta[ij]+0.465))<=1.)hjtpt->Fill(jtpt[ij],w);
-        if(isMC && TMath::Abs((jteta[ij]+0.465))<=1.)hrefpt->Fill(refpt[ij], w);
+        if(TMath::Abs((refeta[ij]+0.465))<=1.)hrefpt->Fill(refpt[ij], w);
+        }
+       else {
+          if(TMath::Abs((jteta[ij]))<=1.)hjtpt->Fill(jtpt[ij],w);
+        if(TMath::Abs((refeta[ij]))<=1.)hrefpt->Fill(refpt[ij], w);
+       }
+      }
+     else {
+        if(TMath::Abs((jteta[ij]+0.465))<=1.)hjtpt->Fill(jtpt[ij],w);
+        }
           Int_t dEtaBin = -1 ;
           for(Int_t ieta = 0 ; ieta <netabin; ieta++){
+           if(isMC){
+             if(coll=="PPb"){
+                if((refeta[ij]+0.465)>deta[ieta]&&(refeta[ij]+0.465)<=deta[ieta+1]) dEtaBin = ieta ;
+             }
+            else {
+            if((refeta[ij])>deta[ieta]&&(refeta[ij])<=deta[ieta+1]) dEtaBin = ieta ;
+               } 
+           }            
+           else{ 
            if((jteta[ij]+0.465)>deta[ieta]&&(jteta[ij]+0.465)<=deta[ieta+1]) dEtaBin = ieta ;
+           }
           }
          if(dEtaBin!=-1) hJetPtEtaBin[dEtaBin]->Fill(jtpt[ij],w);
 
          hrawpt->Fill(rawpt[ij],w);
 
          hjteta->Fill(jteta[ij],w);
-
+        if(isMC){
+         hrefeta->Fill(refeta[ij],w);
+         hetares->Fill(refeta[ij], (refeta[ij]-jteta[ij])/refeta[ij], w);
+        } 
          hjtphi->Fill(jtphi[ij],w);
 
          //*
@@ -1439,7 +1565,9 @@ t->SetBranchAddress("muchg",muchg);
   hrawpt->Write();
   
   hjteta->Write();
-  
+   hrefeta->Write();
+  hetares->Write();
+ 
   hjtphi->Write();
   
   hdiscr_csvSimple->Write();
