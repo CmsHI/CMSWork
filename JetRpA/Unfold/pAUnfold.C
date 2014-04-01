@@ -70,8 +70,8 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 //  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%sDataNewSample%sJetCombinedWithEffectivePrescale.root",coll.Data(), algoName[algo]) ;
 //  else fileNamePbPb_data = (char*)"/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPbJetTrigHF90CentMBAllPYTHIAAkPu3PFJetNotNormalized.root" ; 
  //  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/DATAPPb%sJetSpectraCombineTrigger.root",algoName[algo]) ;
-//   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/CMSSW_6_2_0_pre7/src/histos/PPbdata_ppReco_%s_AlljetTrigKurtCombination_JetPt0noIPupperCut.root",algoName[algo]) ;
-   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/DATAPPb%sJetSpectraCombineTriggerKurtNTuple.root",algoName[algo]) ;
+   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/CMSSW_6_2_0_pre7/src/histos/PPbdata_ppReco_%s_AlljetTrigKurtCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
+//   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/DATAPPb%sJetSpectraCombineTriggerKurtNTuple.root",algoName[algo]) ;
 //   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/CMSSW_5_3_8_HI_patch2/src/histos/PPbdataJetWeight_ppReco_%s_AlljetTrigKurtCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
 //   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/CMSSW_5_3_8_HI_patch2/src/histos/PPbdata_ppReco_%s_AlljetTrigEricCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
   if(doBjets) fileNamePP_mc = (char*)"/net/hidsk0001/d00/scratch/kjung/histos/ppMC_ppReco_ak3PF_BjetTrig_noIPupperCut.root";
@@ -81,6 +81,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   else {
 //    if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
     if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPbMCKurtForest_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
+//    if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMC_ppReco_%s_QCDjetTrig_etashift_noTrgSelection_MCWeightFinalWithSmoothedVzCentWeight_8.root", algoName[algo]) ;
 //  else fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PbpMCProd24_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
   else fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMCProd16_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
     }
@@ -97,7 +98,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   // Output file
   TFile *pbpb_Unfo;
   if (isMC) pbpb_Unfo = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMC_MC_jtpt%.0f_EtaBin%.f_%.f_%s_v4.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
-  else pbpb_Unfo  = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMCKurtInput_jtpt%.0f_EtaBin%.f_%.f_%s_v9.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
+  else pbpb_Unfo  = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMCYaxianInputNoWeight_jtpt%.0f_EtaBin%.f_%.f_%s_v9.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
 
 // Histograms used by RooUnfold
   UnfoldingHistos *uhist[nbins_cent+1];
@@ -181,13 +182,14 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
       if(dataPbPb->subid!=0) continue ;
   //    if(fabs(dataPbPb->vz)>15.) continue ;
      if ( (dataPbPb->jteta+etashift)  > etamax || (dataPbPb->jteta+etashift) < etamin ) continue;
+   //  if ( (dataPbPb->jteta)  > etamax || (dataPbPb->jteta) < etamin ) continue;
   //    if ( (dataPbPb->refeta+etashift)  > etamax || (dataPbPb->refeta+etashift) < etamin ) continue;
     //  if ( fabs(dataPbPb->jteta+0.465)  > 1. ) continue;
       if ( dataPbPb->refpt<0) dataPbPb->refpt=0;
       if (doBjets && fabs(dataPbPb->refparton_flavorForB)!=5) continue;
       //if (doBjets&& dataPbPb->discr_ssvHighEff<2) continue;
       if (doBjets && dataPbPb->jtptB < recoJetPtCut) continue;
-    //  if (!doBjets && dataPbPb->jtpt < recoJetPtCut) continue;
+      if (!doBjets && dataPbPb->jtpt < recoJetPtCut) continue;
       //if (!doTrigEffCorr && dataPbPb->isTrig <1) continue;
      // if ( dataPbPb->isTrig <1) continue;
       
@@ -325,10 +327,10 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 //    else hMattPbPb = (TH1F*) infMatt->Get(Form("DataJetInEtaBin%.f_%.f",etamin*10, etamax*10));
        else {
         if(TMath::Abs(etamin)==1.)
-       //    hMattPbPb = (TH1F*) infMatt->Get("hjtpt");
+           hMattPbPb = (TH1F*) infMatt->Get("hjtpt");
        //    hMattPbPb = (TH1F*) infMatt->Get("jetpt_0-100%");
         //   hMattPbPb = (TH1F*) infMatt->Get("CombinedSpectraInEtaBin-10_10");
-          hMattPbPb = (TH1F*) infMatt->Get("jetptEtaBin-10_10");
+       //   hMattPbPb = (TH1F*) infMatt->Get("jetptEtaBin-10_10");
         else
           hMattPbPb = (TH1F*) infMatt->Get(Form("jetptEtaBin%.f_%.f", etamin*10, etamax*10));
        //   hMattPbPb = (TH1F*) infMatt->Get(Form("jetptEtaBin%.f_%.f_Cen0-100%%", etamin*10, etamax*10));
@@ -513,6 +515,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
       }
     }
     uhist[i]->hResponse = (TH2F*)uhist[i]->hMatrix->Clone(Form("hResponse_cent%d",i));
+    TH1F *hProj = (TH1F*)uhist[i]->hResponse->ProjectionY(Form("hProj_cent%d",i));
 
 
     for (int y=1;y<=uhist[i]->hResponse->GetNbinsY();y++) {
@@ -525,21 +528,20 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 	sum+=uhist[i]->hResponse->GetBinContent(x,y);
       }
 			
-      for (int x=1;x<=uhist[i]->hResponse->GetNbinsX();x++) {  	
+     for (int x=1;x<=uhist[i]->hResponse->GetNbinsX();x++) {  	
 	if (sum==0) continue;
 	double ratio =1.;
-	if (uhist[i]->hMeas->GetBinContent(y)==0) ratio = 1e-100/sum;
-         else ratio = uhist[i]->hMeas->GetBinContent(y)/sum;
-     //  ratio = 1./sum ;
-    //   if (hProj->GetBinContent(y)==0) ratio = 1e-100/sum;
-    //     else ratio = hProj->GetBinContent(y)/sum;
-//       uhist[i]->hResponse->SetBinContent(x,y,uhist[i]->hResponse->GetBinContent(x,y)*ratio);
-//        uhist[i]->hResponse->SetBinError(x,y,uhist[i]->hResponse->GetBinError(x,y)*ratio);
+//	if (uhist[i]->hMeas->GetBinContent(y)==0) ratio = 1e-100/sum;
+//         else ratio = uhist[i]->hMeas->GetBinContent(y)/sum;
+       ratio = 1./sum ;
+       if (hProj->GetBinContent(y)==0) ratio = 1e-100/sum;
+         else ratio = hProj->GetBinContent(y)/sum;
+       uhist[i]->hResponse->SetBinContent(x,y,uhist[i]->hResponse->GetBinContent(x,y)*ratio);
+        uhist[i]->hResponse->SetBinError(x,y,uhist[i]->hResponse->GetBinError(x,y)*ratio);
       }
     }
 		
     
-    TH1F *hProj = (TH1F*)uhist[i]->hResponse->ProjectionY(Form("hProj_cent%d",i));
 /*    for (int y=1;y<=uhist[i]->hResponse->GetNbinsY();y++) {
       for (int x=1;x<=uhist[i]->hResponse->GetNbinsX();x++) {  	
 	double sum=hProj->GetBinContent(y);
