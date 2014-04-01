@@ -39,14 +39,15 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   TH2::SetDefaultSumw2();
 
   const float ppsigma=70.;  //units in mb
+  const float pPbSigma=2.061;  //units in b
 //  const float Lumi = 15.78 ; //units in nb
   const float Lumi = 20.7 ; //units in nb
   const float frac = 0.85 ;
   const float nMB = 2.60259184640000000e+10 ; 
   const float Ncoll = 6.9 ; // for inclusive pPb 
 //  const float Ncoll = 7.5 ; // for pPb in 0-90% 
-  const float etamin = -2.2 ;
-  const float etamax = -1.2 ;
+  const float etamin = -1.0 ;
+  const float etamax = 1.0 ;
   TString coll = "PPb" ; 
   const bool SavePlot=kFALSE;  
   // input files
@@ -64,18 +65,21 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   else fileNamePP_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPMCKurtForest_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
   //if(doBjets)fileNamePbPb_data = (char*)"~/Work/bTagging/outputTowardsFinal/AltBinningV6_bFractionMCTemplate_ppPbPb1_SSVHEat2.0FixCL0_bin_0_40_eta_0_2.root";
   if(doBjets)fileNamePbPb_data = (char*)"/net/hidsk0001/d00/scratch/maoyx/Btag/Unfold/bJetRAA/bFractionMCTemplate_ppPbPb1_SSVHEat2.0FixCL0_bin_0_40_eta_0_2_binomErrors_jet55_wideBin_v2.root";
-//  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%sCombinedJetTrig%sJetNoResidualTrkEffHIN12017v5TrkCorr2DCutAllHistHFsumEta4Bin1.root",coll.Data(), algoName[algo]) ;
-//  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%sCombinedJetTrig%sJetTrkEffHIN12017v5TrkCorr2DCutAllHistHFsumEta4Bin1.root",coll.Data(), algoName[algo]) ;
+//  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/Feb2014/%sCombinedJetTrig%sJetNoResidualTrkEffHIN12017v5TrkCorr2DCutAllHistHFsumEta4Bin1.root",coll.Data(), algoName[algo]) ;
+//  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/Feb2014/%sCombinedJetTrig%sJetTrkEffHIN12017v5TrkCorr2DCutAllHistHFsumEta4Bin1.root",coll.Data(), algoName[algo]) ;
+//  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%sDataNewSample%sJetCombinedWithEffectivePrescale.root",coll.Data(), algoName[algo]) ;
 //  else fileNamePbPb_data = (char*)"/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPbJetTrigHF90CentMBAllPYTHIAAkPu3PFJetNotNormalized.root" ; 
  //  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/DATAPPb%sJetSpectraCombineTrigger.root",algoName[algo]) ;
- //  else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/CMSSW_6_2_0_pre7/src/histos/PPbdata_ppReco_%s_AlljetTrigKurtCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
-   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/CMSSW_5_3_8_HI_patch2/src/histos/PPbdataJetWeight_ppReco_%s_AlljetTrigKurtCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
+//   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/CMSSW_6_2_0_pre7/src/histos/PPbdata_ppReco_%s_AlljetTrigKurtCombination_JetPt0noIPupperCut.root",algoName[algo]) ;
+   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/DATAPPb%sJetSpectraCombineTriggerKurtNTuple.root",algoName[algo]) ;
+//   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/CMSSW_5_3_8_HI_patch2/src/histos/PPbdataJetWeight_ppReco_%s_AlljetTrigKurtCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
+//   else fileNamePbPb_data = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/CMSSW_5_3_8_HI_patch2/src/histos/PPbdata_ppReco_%s_AlljetTrigEricCombinationWeight_JetPt0noIPupperCut.root",algoName[algo]) ;
   if(doBjets) fileNamePP_mc = (char*)"/net/hidsk0001/d00/scratch/kjung/histos/ppMC_ppReco_ak3PF_BjetTrig_noIPupperCut.root";
-//  else fileNamePP_mc = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/ppMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
-  else fileNamePP_mc =  (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPMCKurtForest_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
+  else fileNamePP_mc = (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/ppMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", "ak3PF") ;
+//  else fileNamePP_mc =  (char*)Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPMCKurtForest_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
   if(doBjets)fileNamePbPb_mc = (char*) "/net/hisrv0001/home/mnguyen/scratch/bTaggingOutput/ntuples/PbPbBMC_pt30by3_ipHICalibCentWeight_noTrig.root";
   else {
-  //  if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
+//    if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMCProd16NoVzCut_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
     if(coll=="PPb")fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PPbMCKurtForest_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
 //  else fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/PbpMCProd24_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
   else fileNamePbPb_mc = (char*) Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/pPbMCProd16_ppReco_%s_QCDjetTrig_JetPt0noIPupperCut.root", algoName[algo]) ;
@@ -93,7 +97,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   // Output file
   TFile *pbpb_Unfo;
   if (isMC) pbpb_Unfo = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMC_MC_jtpt%.0f_EtaBin%.f_%.f_%s_v4.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
-  else pbpb_Unfo  = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMC_jtpt%.0f_EtaBin%.f_%.f_%s_v7.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
+  else pbpb_Unfo  = new TFile(Form("/afs/cern.ch/work/y/ymao/analysis/AsymmetryPA/Unfold/histos/%s_UnfoPriorGen_%sKurtMCKurtInput_jtpt%.0f_EtaBin%.f_%.f_%s_v9.root",coll.Data(), algoName[algo],recoJetPtCut,etamin*10, etamax*10, bJetString.c_str()),"RECREATE");
 
 // Histograms used by RooUnfold
   UnfoldingHistos *uhist[nbins_cent+1];
@@ -173,15 +177,17 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
       int cBin = 0;
             
       if ( dataPbPb->refpt  < 0. ) continue;
+      if ( dataPbPb->refpt  < 20. ) continue;
       if(dataPbPb->subid!=0) continue ;
-   //   if ( (dataPbPb->jteta+etashift)  > etamax || (dataPbPb->jteta+etashift) < etamin ) continue;
-      if ( (dataPbPb->refeta+etashift)  > etamax || (dataPbPb->refeta+etashift) < etamin ) continue;
+  //    if(fabs(dataPbPb->vz)>15.) continue ;
+     if ( (dataPbPb->jteta+etashift)  > etamax || (dataPbPb->jteta+etashift) < etamin ) continue;
+  //    if ( (dataPbPb->refeta+etashift)  > etamax || (dataPbPb->refeta+etashift) < etamin ) continue;
     //  if ( fabs(dataPbPb->jteta+0.465)  > 1. ) continue;
       if ( dataPbPb->refpt<0) dataPbPb->refpt=0;
       if (doBjets && fabs(dataPbPb->refparton_flavorForB)!=5) continue;
       //if (doBjets&& dataPbPb->discr_ssvHighEff<2) continue;
       if (doBjets && dataPbPb->jtptB < recoJetPtCut) continue;
-      if (!doBjets && dataPbPb->jtpt < recoJetPtCut) continue;
+    //  if (!doBjets && dataPbPb->jtpt < recoJetPtCut) continue;
       //if (!doTrigEffCorr && dataPbPb->isTrig <1) continue;
      // if ( dataPbPb->isTrig <1) continue;
       
@@ -235,13 +241,18 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
       dataPP->tJet->GetEntry(jentry2);
       
       if ( dataPP->refpt<0) continue;
-      if ( (dataPP->refeta)  > etamax || (dataPP->refeta) < etamin ) continue;
+      if ( dataPP->refpt<20) continue;
+    //  if(dataPP->subid!=0) continue ;
+    //  if(TMath::Abs(dataPP->vz)>15) continue ;
+   //   if ( (dataPP->refeta)  > etamax || (dataPP->refeta) < etamin ) continue;
+   //   if ( (dataPP->refeta+etashift)  > etamax || (dataPP->refeta+etashift) < etamin ) continue;
+      if ( (dataPP->jteta+etashift)  > etamax || (dataPP->jteta+etashift) < etamin ) continue;
     //  if ( (dataPP->jteta)  > etamax || (dataPP->jteta) < etamin ) continue;
    //    if ( fabs(dataPP->jteta+0.465)  > 1. ) continue; 
      if ( dataPP->refpt<0) dataPP->refpt=0;
       if ( doBjets && fabs(dataPP->refparton_flavorForB)!=5) continue;
       //if ( doBjets && dataPP->discr_ssvHighEff<2) continue;
-      if ( dataPP->jtpt < recoJetPtCut) continue;
+    //  if ( dataPP->jtpt < recoJetPtCut) continue;
       
       if(isMC){ 
       if (jentry2 % 2 == 1) {
@@ -314,14 +325,18 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 //    else hMattPbPb = (TH1F*) infMatt->Get(Form("DataJetInEtaBin%.f_%.f",etamin*10, etamax*10));
        else {
         if(TMath::Abs(etamin)==1.)
-           hMattPbPb = (TH1F*) infMatt->Get("hjtpt");
+       //    hMattPbPb = (TH1F*) infMatt->Get("hjtpt");
        //    hMattPbPb = (TH1F*) infMatt->Get("jetpt_0-100%");
-       //   hMattPbPb = (TH1F*) infMatt->Get("jetptEtaBin-10_10");
+        //   hMattPbPb = (TH1F*) infMatt->Get("CombinedSpectraInEtaBin-10_10");
+          hMattPbPb = (TH1F*) infMatt->Get("jetptEtaBin-10_10");
         else
           hMattPbPb = (TH1F*) infMatt->Get(Form("jetptEtaBin%.f_%.f", etamin*10, etamax*10));
-     //     hMattPbPb = (TH1F*) infMatt->Get(Form("jetptEtaBin%.f_%.f_Cen0-100%%", etamin*10, etamax*10));
+       //   hMattPbPb = (TH1F*) infMatt->Get(Form("jetptEtaBin%.f_%.f_Cen0-100%%", etamin*10, etamax*10));
+      //    hMattPbPb = (TH1F*) infMatt->Get(Form("CombinedSpectraInEtaBin%.f_%.f", etamin*10, etamax*10));
         }
+   //   hMattPbPb->Scale(pPbSigma*1.e3);
        hMattPbPb->Scale(1./(frac*Lumi*1.e6));
+  //     hMattPbPb->Scale(1./(frac*Lumi*1.e9*pPbSigma));
 //       hMattPbPb->Scale(1./nMB);
    //  hMattPbPb->Scale(1./(etamax-etamin));    
    //  hMattPbPb->Scale(1./2.);    
@@ -380,7 +395,11 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
       }
 */
        //fixed by Yaxian
-       for(int ibin=1;ibin<=uhist[0]->hMeas->GetNbinsX();ibin++){
+/*       for(int ibin=1;ibin<=hRebinPbPb->GetNbinsX();ibin++){
+          cout <<"data bins =" << hRebinPbPb->GetBinCenter(ibin) << " bin content =" << hRebinPbPb->GetBinContent(ibin)<<endl;
+      }
+*/       for(int ibin=1;ibin<=uhist[0]->hMeas->GetNbinsX();ibin++){
+//          cout <<"uhist[0]->hMeas bins =" << uhist[0]->hMeas->GetBinCenter(ibin) << " bin content =" << uhist[0]->hMeas->GetBinContent(ibin)<<endl;
         uhist[0]->hMeas->SetBinContent(ibin,0);
         uhist[0]->hMeas->SetBinError(ibin,0); 
         float binCenter = uhist[0]->hMeas->GetBinCenter(ibin);
@@ -393,7 +412,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
         uhist[0]->hMeas->SetBinContent(ibin,binContent);  
         uhist[0]->hMeas->SetBinError(ibin,binError);  
        }
- 
+     
    TFile *infMattPP = new TFile(fileNamePP_data);
     TH1F *hMattPP = NULL;
     TH1F *hTagEffPP = NULL;
@@ -521,7 +540,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 		
     
     TH1F *hProj = (TH1F*)uhist[i]->hResponse->ProjectionY(Form("hProj_cent%d",i));
-    for (int y=1;y<=uhist[i]->hResponse->GetNbinsY();y++) {
+/*    for (int y=1;y<=uhist[i]->hResponse->GetNbinsY();y++) {
       for (int x=1;x<=uhist[i]->hResponse->GetNbinsX();x++) {  	
 	double sum=hProj->GetBinContent(y);
 //	cout <<y<<" "<<x<<" "<<sum<<endl;
@@ -533,7 +552,7 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 	uhist[i]->hResponse->SetBinError(x,y,uhist[i]->hResponse->GetBinError(x,y)*ratio);
       }
     }
-
+*/
     uhist[i]->hResponseNorm = (TH2F*)uhist[i]->hMatrix->Clone(Form("hResponseNorm_cent%d",i));
     for (int x=1;x<=uhist[i]->hResponseNorm->GetNbinsX();x++) {
       double sum=0;
@@ -607,16 +626,21 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
   
     TH1F *hPrior;//=(TH1F*) functionHist(fPow,uhist[i]->hMeas,Form("hPrior_cent%d",i));
     if(isMC) 
-       hPrior=(TH1F*)hMCGen->Clone(Form("hPrior_cent%d", i));
+     //  hPrior=(TH1F*)hMCGen->Clone(Form("hPrior_cent%d", i));
+       hPrior=(TH1F*)uhist[i]->hGen->Clone(Form("hPrior_cent%d", i));
     else {
     //  if(i==nbins_cent) 
-         hPrior=(TH1F*)hMCGen->Clone(Form("hPrior_cent%d", i));
+     //    hPrior=(TH1F*)hMCGen->Clone(Form("hPrior_cent%d", i));
+         hPrior=(TH1F*)uhist[i]->hGen->Clone(Form("hPrior_cent%d", i));
   //   else 
   //    hPrior=(TH1F*)uhist[i]->hRecoBinByBin->Clone(Form("hPrior_cent%d", i));
   //     hPrior=(TH1F*)uhist[i]->hMeas->Clone(Form("hPrior_cent%d", i));
      }
+         hPrior=(TH1F*)uhist[i]->hGen->Clone(Form("hPrior_cent%d", i));
      removeZero(hPrior);
-		
+    for(int ibin=1 ; ibin < hPrior->GetNbinsX(); ibin++){
+      cout <<" prior bin center =" <<hPrior->GetBinCenter(ibin) << " content =" << hPrior->GetBinContent(ibin) <<endl ;
+  } 		
     // Do unfolding
     //if (isMC) uhist[i]->hMeas = (TH1F*)uhist[i]->hMatrix->ProjectionY()->Clone(Form("hMeas_cent%d",i));
     prior myPrior(uhist[i]->hMatrixFit,hPrior, 0);
@@ -949,11 +973,11 @@ void pAUnfold(int algo= 3,bool useSpectraFromFile=0, bool useMatrixFromFile=0, i
 		  hRecoBinByBin[i]            ->Scale(1./Ncoll);
 		  hReco[i]            ->Scale(1./Ncoll);
 */
-              hMeas[i]            ->Scale(1./208);
+            hMeas[i]            ->Scale(1./208);
                   hRecoBinByBin[i]            ->Scale(1./208);
                   hReco[i]            ->Scale(1./208);
-/* 
-		  hMeas[i]->Divide(hMeas[nbins_cent]);
+ 
+/*		  hMeas[i]->Divide(hMeas[nbins_cent]);
 		  hRecoBinByBin[i]->Divide(hRecoBinByBin[nbins_cent]);
 		  hReco[i]->Divide(hReco[nbins_cent]);
 */
